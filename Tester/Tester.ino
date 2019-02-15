@@ -2,6 +2,20 @@
 #include <PacketSerial.h>
 #include <bluefruit.h>
 //#define DEBUG
+#define SENSITIVITY_ACCELEROMETER_2  0.000061
+#define SENSITIVITY_ACCELEROMETER_4  0.000122
+#define SENSITIVITY_ACCELEROMETER_8  0.000244
+#define SENSITIVITY_ACCELEROMETER_16 0.000732
+#define SENSITIVITY_GYROSCOPE_245    0.00875
+#define SENSITIVITY_GYROSCOPE_500    0.0175
+#define SENSITIVITY_GYROSCOPE_2000   0.07
+#define SENSITIVITY_MAGNETOMETER_4   0.00014
+#define SENSITIVITY_MAGNETOMETER_8   0.00029
+#define SENSITIVITY_MAGNETOMETER_12  0.00043
+#define SENSITIVITY_MAGNETOMETER_16  0.00058
+const float ascale=SENSITIVITY_ACCELEROMETER_2;
+const float gscale=SENSITIVITY_GYROSCOPE_245;
+const float mscale=SENSITIVITY_MAGNETOMETER_4;
 BLEClientDis  clientDis;
 BLEClientUart clientUart;
 unsigned int i, trigger;
@@ -157,9 +171,9 @@ void onPacketReceived(const uint8_t* buffer, size_t size)
   if (size <= 0) return;
   imu = (struct imu_data *)buffer;
   #ifndef TEST
-  Serial.printf("{\"a\":[%d,%d,%d],", imu->ax, imu->ay, imu->az);
-  Serial.printf("\"g\":[%d,%d,%d],", imu->gx, imu->gy, imu->gz);
-  Serial.printf("\"m\":[%d,%d,%d],", imu->mx, imu->my, imu->mz);
+  Serial.printf("{\"a\":[%f,%f,%f],", imu->ax*ascale, imu->ay*ascale, imu->az*ascale);
+  Serial.printf("\"g\":[%f,%f,%f],", imu->gx*gscale, imu->gy*gscale, imu->gz*gscale);
+  Serial.printf("\"m\":[%f,%f,%f],", imu->mx*mscale, imu->my*mscale, imu->mz*mscale);
   Serial.printf("\"ts\":%lu}\n", imu->ts);
   #else
   if(i > 30000) i=0;

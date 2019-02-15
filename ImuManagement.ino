@@ -35,15 +35,15 @@ void setupDevice()
   // to communicate with the LSM9DS1.
   // Use either IMU_MODE_I2C or IMU_MODE_SPI
   imu.settings.device.commInterface = IMU_MODE_I2C;
-  
+
   // [mAddress] sets the I2C address or SPI CS pin of the
   // LSM9DS1's magnetometer.
   imu.settings.device.mAddress = 0x1E; // Use I2C addres 0x1E
-  
+
   // [agAddress] sets the I2C address or SPI CS pin of the
   // LSM9DS1's accelerometer/gyroscope.
   imu.settings.device.agAddress = 0x6B; // I2C address 0x6B
-  
+
   // gyro.latchInterrupt controls the latching of the
   // gyro and accelerometer interrupts (INT1 and INT2).
   // false = no latching
@@ -171,7 +171,7 @@ void configureLSM9DS1Interrupts()
   /////////////////////////////////////////////
   // For more information on setting gyro interrupt, threshold,
   // and configuring the intterup, see the datasheet.
-  // We'll configure INT_GEN_CFG_G, INT_GEN_THS_??_G, 
+  // We'll configure INT_GEN_CFG_G, INT_GEN_THS_??_G,
   // INT_GEN_DUR_G, and INT1_CTRL.
   // 1. Configure the gyro interrupt generator:
   //  - ZHIE_G: Z-axis high event (more can be or'd together)
@@ -199,7 +199,7 @@ void configureLSM9DS1Interrupts()
   imu.configAccelThs(20, X_AXIS, 1, false);
   // 5. Configure INT1 - assign it to gyro interrupt
   //   - XG_INT1: Says we're configuring INT1
-  //   - INT1_IG_G | INT1_IG_XL: Sets interrupt source to 
+  //   - INT1_IG_G | INT1_IG_XL: Sets interrupt source to
   //     both gyro interrupt and accel
   //   - INT_ACTIVE_LOW: Sets interrupt to active low.
   //         (Can otherwise be set to INT_ACTIVE_HIGH.)
@@ -263,7 +263,7 @@ uint16_t initLSM9DS1()
   // The magnetometer DRDY pin (RDY) is not configurable.
   // It is active high and always turned on.
   pinMode(RDYM_PIN, INPUT);
-#if 1  
+#if 1
   // Turn on the IMU with configureIMU() (defined above)
   // check the return status of imu.begin() to make sure
   // it's connected.
@@ -282,10 +282,12 @@ uint16_t initLSM9DS1()
   setupAccel(); // Set up accelerometer parameters
   setupMag(); // Set up magnetometer parameters
   setupTemperature(); // Set up temp sensor parameter
-  uint16_t status=imu.begin();
+  uint16_t status = imu.begin();
 #endif
   thresholdAccelGyro_flag = false;
   configureLSM9DS1Interrupts();
+  //imu.calibrateMag(false);
+  imu.calibrate(true);
   return status;
 }
 
@@ -335,7 +337,7 @@ void imuRead()
     // ax, ay, and az variables with the most current data.
     imu.readAccel();
   }
-#if 0  
+#if 1
   if ( imu.magAvailable() )
   {
     // To read from the magnetometer, first call the
@@ -343,5 +345,5 @@ void imuRead()
     // mx, my, and mz variables with the most current data.
     imu.readMag();
   }
-#endif  
+#endif
 }

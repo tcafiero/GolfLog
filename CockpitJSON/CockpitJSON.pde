@@ -87,15 +87,15 @@ void serialEvent(Serial myPort) //Reading the datas by Processing.
     JSONArray accel = json.getJSONArray("a");
     JSONArray gyro = json.getJSONArray("g");
     JSONArray mag = json.getJSONArray("m");
-    acceleration.x=accel.getInt(0);
-    acceleration.y=accel.getInt(1);
-    acceleration.z=accel.getInt(2);
-    gyroscope.x=gyro.getInt(0);
-    gyroscope.y=gyro.getInt(1);
-    gyroscope.z=gyro.getInt(2);
-    magnetic.x=mag.getInt(0);
-    magnetic.y=mag.getInt(1);
-    magnetic.z=mag.getInt(2);
+    acceleration.x=accel.getFloat(0);
+    acceleration.y=accel.getFloat(1);
+    acceleration.z=accel.getFloat(2);
+    gyroscope.x=gyro.getFloat(0);
+    gyroscope.y=gyro.getFloat(1);
+    gyroscope.z=gyro.getFloat(2);
+    magnetic.x=mag.getFloat(0);
+    magnetic.y=mag.getFloat(1);
+    magnetic.z=mag.getFloat(2);
     //add a new row for each value
     TableRow newRow = table.addRow();
     //place the new row and value under the "Data" column
@@ -117,7 +117,11 @@ void serialEvent(Serial myPort) //Reading the datas by Processing.
     else
       pitch = (float)atan(-acceleration.x / (acceleration.y * sin(roll) + acceleration.z * cos(roll)));
     yaw = atan2((magnetic.z * sin(roll) - magnetic.y * cos(roll)), (magnetic.x * cos(pitch) + magnetic.y * sin(pitch) * sin(roll) + magnetic.z * sin(pitch) * cos(roll)));
-    yaw2 = 180 * atan2(magnetic.x, magnetic.y)/PI;
+    Azimuth=degrees(yaw);
+    Pitch=degrees(pitch)*5;
+    Bank=roll;
+    //yaw = 180 * atan2(magnetic.x, magnetic.y)/PI;
+    /*
     println("ax: "+accel.getInt(0)+" ay: "+accel.getInt(1)+" az: "+accel.getInt(2));
     println("gx: "+gyro.getInt(0)+" gy: "+gyro.getInt(1)+" gz: "+gyro.getInt(2));
     println("mx: "+mag.getInt(0)+" gy: "+mag.getInt(1)+" gz: "+mag.getInt(2));
@@ -125,21 +129,21 @@ void serialEvent(Serial myPort) //Reading the datas by Processing.
     float   my = mag.getInt(1);
     float   mz = mag.getInt(2);
     float  norm = sqrt(mag.getInt(0) * mag.getInt(0) + mag.getInt(1) * mag.getInt(1) + mag.getInt(2) * mag.getInt(2));
-    //if (norm == 0.0f) return; // handle NaN
+    if (norm == 0.0f) return; // handle NaN
     norm = 1.0f / norm;        // use reciprocal for division
     mx = mx * norm;
     my = my * norm;
     mz = mz * norm;
-    heading = atan2(mx, my);
+    */
+    heading = yaw;
     heading -= DECLINATION * PI / 180;
-
     if (heading > PI) heading -= (2 * PI);
     else if (heading < -PI) heading += (2 * PI);
     else if (heading < 0) heading += 2 * PI;
     Phi = -roll; //radians(roll); 
     Theta = degrees(pitch); //radians(pitch); 
     //Psi = degrees(yaw);
-    Psi = degrees(heading);
+    Psi = degrees(yaw);
     println("roll: "+degrees(roll)+" pitch: "+degrees(pitch)+" yaw: "+degrees(yaw)+" heading: "+degrees(heading));    
     /*
   float sensors[] = float(split(myString, ':'));  
@@ -184,9 +188,9 @@ void MakeAnglesDependentOnMPU6050()
    Pitch=Theta*10; 
    Azimuth=Psi;
    */
-  Bank =-Phi; 
-  Pitch=Theta*5; 
-  Azimuth=Psi;
+  //Bank =-Phi; 
+  //Pitch=Theta*5; 
+  //Azimuth=Psi;
 }
 void Horizon() 
 { 
@@ -362,8 +366,8 @@ void ShowAngles()
   rect(-150, 400, 280, 40); 
   rect(150, 400, 280, 40); 
   fill(255); 
-  Pitch=Pitch/5; 
-  int Pitch1=round(Pitch);  
+  //Pitch=Pitch; 
+  int Pitch1=round(Pitch)/5;  
   text("Pitch:  "+Pitch1+" Deg", -20, 411, 500, 60); 
   text("Bank:  "+Bank*100+" Deg", 280, 411, 500, 60);
 }
