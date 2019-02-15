@@ -63,7 +63,7 @@ void setupGyro()
   // 1 = 14.9    4 = 238
   // 2 = 59.5    5 = 476
   // 3 = 119     6 = 952
-  imu.settings.gyro.sampleRate = 3; // 119Hz ODR
+  imu.settings.gyro.sampleRate = 6; // 952Hz ODR
   // [bandwidth] can set the cutoff frequency of the gyro.
   // Allowed values: 0-3. Actual value of cutoff frequency
   // depends on the sample rate. (Datasheet section 7.12)
@@ -95,7 +95,7 @@ void setupAccel()
   imu.settings.accel.enableZ = true; // Enable Z
   // [scale] sets the full-scale range of the accelerometer.
   // accel scale can be 2, 4, 8, or 16
-  imu.settings.accel.scale = 8; // Set accel scale to +/-8g.
+  imu.settings.accel.scale = 16; // Set accel scale to +/-16g.
   // [sampleRate] sets the output data rate (ODR) of the
   // accelerometer. ONLY APPLICABLE WHEN THE GYROSCOPE IS
   // DISABLED! Otherwise accel sample rate = gyro sample rate.
@@ -255,6 +255,37 @@ void imuDataSampling(TickType_t StopTime)
 }
 #endif
 
+// configureIMU sets up our LSM9DS1 interface, sensor scales
+// and sample rates.
+uint16_t configureIMU()
+{
+  // Set up Device Mode (I2C) and I2C addresses:
+  imu.settings.device.commInterface = IMU_MODE_I2C;
+  imu.settings.device.agAddress = LSM9DS1_AG_ADDR(1);
+  imu.settings.device.mAddress = LSM9DS1_M_ADDR(1);
+
+  // gyro.latchInterrupt controls the latching of the
+  // gyro and accelerometer interrupts (INT1 and INT2).
+  // false = no latching
+  imu.settings.gyro.latchInterrupt = false;
+
+  // Set gyroscope scale to +/-245 dps:
+  imu.settings.gyro.scale = 245;
+  // Set gyroscope (and accel) sample rate to 952Hz
+  imu.settings.gyro.sampleRate = 6; // 952Hz ODR
+  // Set accelerometer scale to +/- 16g
+  imu.settings.accel.scale = 16;
+  // Set magnetometer scale to +/- 12g
+  imu.settings.mag.scale = 12;
+  // Set magnetometer sample rate to 0.625 Hz
+  imu.settings.mag.sampleRate = 0;
+
+  // Call imu.begin() to initialize the sensor and instill
+  // it with our new settings.
+  return imu.begin();
+}
+
+
 uint16_t initLSM9DS1()
 {
   pinMode(INT2_PIN_DRDY, INPUT_PULLUP);
@@ -291,35 +322,6 @@ uint16_t initLSM9DS1()
   return status;
 }
 
-// configureIMU sets up our LSM9DS1 interface, sensor scales
-// and sample rates.
-uint16_t configureIMU()
-{
-  // Set up Device Mode (I2C) and I2C addresses:
-  imu.settings.device.commInterface = IMU_MODE_I2C;
-  imu.settings.device.agAddress = LSM9DS1_AG_ADDR(1);
-  imu.settings.device.mAddress = LSM9DS1_M_ADDR(1);
-
-  // gyro.latchInterrupt controls the latching of the
-  // gyro and accelerometer interrupts (INT1 and INT2).
-  // false = no latching
-  imu.settings.gyro.latchInterrupt = false;
-
-  // Set gyroscope scale to +/-245 dps:
-  imu.settings.gyro.scale = 245;
-  // Set gyroscope (and accel) sample rate to 14.9 Hz
-  imu.settings.gyro.sampleRate = 1;
-  // Set accelerometer scale to +/-2g
-  imu.settings.accel.scale = 2;
-  // Set magnetometer scale to +/- 4g
-  imu.settings.mag.scale = 4;
-  // Set magnetometer sample rate to 0.625 Hz
-  imu.settings.mag.sampleRate = 0;
-
-  // Call imu.begin() to initialize the sensor and instill
-  // it with our new settings.
-  return imu.begin();
-}
 
 void imuRead()
 {

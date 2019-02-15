@@ -13,7 +13,7 @@
 #define SENSITIVITY_MAGNETOMETER_8   0.00029
 #define SENSITIVITY_MAGNETOMETER_12  0.00043
 #define SENSITIVITY_MAGNETOMETER_16  0.00058
-const float ascale=SENSITIVITY_ACCELEROMETER_2;
+const float ascale=SENSITIVITY_ACCELEROMETER_8;
 const float gscale=SENSITIVITY_GYROSCOPE_245;
 const float mscale=SENSITIVITY_MAGNETOMETER_4;
 BLEClientDis  clientDis;
@@ -32,7 +32,7 @@ SLIPPacketSerial myPacketSerial;
 void setup()
 {
   trigger=0;
-  Serial.begin(115200);
+  Serial.begin(230400);
 #ifdef DEBUG
   Serial.println("IoThingsWare nRF52 Central BLEUART Gateway");
   Serial.println("------------------------------------------\n");
