@@ -7,6 +7,7 @@
 #include <SparkFunLSM9DS1.h>
 #include <bluefruit.h>
 
+// REMEMBER TO LOAD Arduino Library: SparkFun LSM9DS1 
 //#define TEST
 //#define SLIP
 #define THRESHOLD 2.4      // 2.4 g
