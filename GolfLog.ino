@@ -7,12 +7,14 @@
 #include <SparkFunLSM9DS1.h>
 #include <bluefruit.h>
 
-// REMEMBER TO LOAD Arduino Library: SparkFun LSM9DS1 
+// REMEMBER TO LOAD Arduino Library: SparkFun LSM9DS1
 //#define TEST
 //#define SLIP
 #define THRESHOLD 2.4      // 2.4 g
 #define WINDOWLEN 10       // 10 samples
 #define SAMPLINGPERIOD 10  // 10ms
+#define RINGBUFFERLEN 100  // 100 samples
+
 #define SENSITIVITY_ACCELEROMETER_2  0.000061
 #define SENSITIVITY_ACCELEROMETER_4  0.000122
 #define SENSITIVITY_ACCELEROMETER_8  0.000244
@@ -92,17 +94,18 @@ struct imu_data {
   int16_t mx, my, mz; // x, y, and z axis readings of the magnetometer
   int32_t ts;         // time stamp
 } imu_buffer;
-TaskHandle_t  SendDataHandle;
+TaskHandle_t  GetDataHandle;
 TickType_t xLastWakeTime;
 const TickType_t xFrequency = SAMPLINGPERIOD;
 etl::deque < imu_data, WINDOWLEN > window;
+etl::deque < imu_data, RINGBUFFERLEN > ringbuffer;
 //etl::vector < imu_data, WINDOWLEN > window;
 SlidingWindowMinMax<int16_t> swm;
-int window_not_full;
 
 unsigned int i;
 unsigned long j;
 float spread;
+int countdowntrigger;
 
 void startAdv(void)
 {
@@ -157,35 +160,25 @@ void getData()
 #endif
 }
 
-void SendData_callback(void *pvParameter)
+void GetData_callback(void *pvParameter)
 {
   for ( ;; )
   {
     xLastWakeTime = xTaskGetTickCount();
     digitalToggle(LED_RED);
     getData();
-    swm.addTail(imu.ax);
     memcpy(&imu_buffer, &imu.gx, sizeof(imu_data));
-    window.push_back(imu_buffer);
-    if (window_not_full)
+    if (ringbuffer.full()) ringbuffer.pop_front();
+    ringbuffer.push_back(imu_buffer);
+    if (countdowntrigger)
     {
-      window_not_full--;
-    } else
-    {
-      //etl::vector<imu_data, 1>::const_iterator start = window.begin();
-      //swm.removeHead(start->ax);
-      //window.erase(window.begin());
-      window.pop_front();
-      spread = swm.getMaximum() * ascale - swm.getMinimum() * ascale;
-      //Serial.printf("max=%f min=%f\n",swm.getMaximum()*ascale,swm.getMaximum()*ascale);
-      if (spread > THRESHOLD)
+      --countdowntrigger;
+      if (countdowntrigger == 0)
       {
-        Serial.printf("spread=%f\n", spread);
-        window_not_full = 10;
-        swm.clear();
-        while (!window.empty())
+        while (!ringbuffer.empty())
         {
-          imu_data in = window.front();
+          imu_data in = ringbuffer.front();
+          ringbuffer.pop_front();
 #ifdef SLIP
           myPacketSerial.send((uint8_t*)&in, (uint8_t)sizeof(imu_data));
 #else
@@ -194,19 +187,36 @@ void SendData_callback(void *pvParameter)
           bleuart.printf("\"m\":[%f,%f,%f],", in.mx * mscale, in.my * mscale, in.mz * mscale);
           bleuart.printf("\"ts\":%lu}\n", in.ts);
 #endif
-          window.pop_front();
-        }
-      }
+        };
+      };
     }
+    else {
+      if (window.full()) window.pop_front();
+      window.push_back(imu_buffer);
+      swm.addTail(imu.ax);
+      //etl::vector<imu_data, 1>::const_iterator start = window.begin();
+      //swm.removeHead(start->ax);
+      //window.erase(window.begin());
+      spread = swm.getMaximum() * ascale - swm.getMinimum() * ascale;
+      //Serial.printf("max=%f min=%f\n",swm.getMaximum()*ascale,swm.getMaximum()*ascale);
+      if (spread > THRESHOLD)
+      {
+        Serial.printf("spread=%f\n", spread);
+        swm.clear();
+        window.clear();
+        countdowntrigger = 50;
+      };
+    };
     vTaskDelayUntil( &xLastWakeTime, xFrequency );
   }
 }
+
 
 void setup()
 {
   i = 0;
   j = 0;
-  window_not_full = 10;
+  countdowntrigger=0;
   pinMode(LED_RED, OUTPUT);
   Serial.begin(115200);
   delay(1000);
@@ -235,7 +245,7 @@ void setup()
   blebas.write(100);
   // Set up and start advertising
   startAdv();
-  xTaskCreate( SendData_callback, "SendData", configMINIMAL_STACK_SIZE + 200, NULL, 2, &SendDataHandle );
+  xTaskCreate( GetData_callback, "GetData", configMINIMAL_STACK_SIZE + 200, NULL, 2, &GetDataHandle );
 }
 
 void loop()
